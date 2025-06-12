@@ -12,8 +12,8 @@ export default function App() {
   return (
     <NavigationContainer>
       <Stack.Navigator initialRouteName="ChatList">
-        <Stack.Screen name="ChatList" component={ChatListScreen} options={{ title: 'Chats' }} />
-        <Stack.Screen name="Chat" component={ChatScreen} />
+        <Stack.Screen name="ChatList" component={ChatListScreen} options={{ headerShown: false }} />
+        <Stack.Screen name="Chat" component={ChatScreen} options={{ headerShown: false }} />
       </Stack.Navigator>
     </NavigationContainer>
   );
