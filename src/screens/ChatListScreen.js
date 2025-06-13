@@ -28,7 +28,7 @@ const initialChats = [
   },
   {
     id: '2',
-    nickname: 'Bob',
+    nickname: 'Jason',
     avatar: require('../images/husky.jpg'),
     lastMessage: 'See you soon :smile:',
     lastUpdated: new Date('2024-06-12T09:00:00'),
