@@ -1,5 +1,5 @@
 // src/screens/ChatScreen.js
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect  } from 'react';
 import {
   View,
   Text,
@@ -14,18 +14,60 @@ import {
   StatusBar,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import {hideNavigationBar,showNavigationBar} from 'react-native-navigation-bar-color';
 
 export default function ChatScreen({ route, navigation }) {
   const { userName } = route.params;
-  const [messages, setMessages] = useState([]);
+  const [messages, setMessages] = useState([
+  {
+    id: '1',
+    text: 'Hi! How are you?',
+    type: 'text',
+    status: 'sent',
+    fromSelf: false,
+    timestamp: new Date(Date.now() - 1000 * 60 * 5), // 5 minutes ago
+  },
+  {
+    id: '2',
+    text: "I'm fine, thanks!",
+    type: 'text',
+    status: 'sent',
+    fromSelf: true,
+    timestamp: new Date(Date.now() - 1000 * 60 * 4), // 4 minutes ago
+  },
+  {
+    id: '3',
+    text: "How about you?",
+    type: 'text',
+    status: 'sent',
+    fromSelf: true,
+    timestamp: new Date(Date.now() - 1000 * 60 * 4), // 4 minutes ago
+  },
+  {
+    id: '4',
+    text: "I am fine too.",
+    type: 'text',
+    status: 'sent',
+    fromSelf: false,
+    timestamp: new Date(Date.now() - 1000 * 60 * 3), // 3 minutes ago
+  },
+  {
+    id: '5',
+    text: "Thank you",
+    type: 'text',
+    status: 'sent',
+    fromSelf: false,
+    timestamp: new Date(Date.now() - 1000 * 60 * 2), // 2 minutes ago
+  },
+]);
+
   const [input, setInput] = useState('');
   const flatListRef = useRef(null);
-  const insets = useSafeAreaInsets();
 
   const sendMessage = () => {
     if (input.trim()) {
       setMessages(prev => [
+        ...prev,
         {
           id: Date.now().toString(),
           text: input,
@@ -34,11 +76,16 @@ export default function ChatScreen({ route, navigation }) {
           fromSelf: true,
           timestamp: new Date(),
         },
-        ...prev,
       ]);
       setInput('');
     }
   };
+
+  useEffect(() => {
+  if (flatListRef.current && messages.length > 0) {
+    flatListRef.current.scrollToEnd({ animated: true });
+  }
+}, [messages]);
 
   const handleLongPress = (message) => {
     Alert.alert('Message Options', 'Choose an action', [
@@ -71,9 +118,13 @@ export default function ChatScreen({ route, navigation }) {
       .padStart(2, '0')}`;
   };
 
+  useEffect(() => {
+  hideNavigationBar();
+}, []);
+
   return (
     <KeyboardAvoidingView
-      style={[styles.container, { paddingBottom: insets.bottom }]}
+      style={styles.container}
       behavior={Platform.OS === 'android' ? 'height' : 'padding'}
     >
       {/* Navigation Bar */}
@@ -91,7 +142,6 @@ export default function ChatScreen({ route, navigation }) {
       <FlatList
         ref={flatListRef}
         data={messages}
-        inverted
         keyExtractor={(item) => item.id}
         renderItem={renderMessage}
         contentContainerStyle={{ paddingTop: 10 }}
@@ -107,6 +157,7 @@ export default function ChatScreen({ route, navigation }) {
           value={input}
           onChangeText={setInput}
           placeholder="Type a message"
+          placeholderTextColor="#888" 
           multiline
         />
         <TouchableOpacity onPress={sendMessage}>
@@ -138,23 +189,27 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   inputBar: {
-    flexDirection: 'row',
-    alignItems: 'flex-end',
-    padding: 8,
-    backgroundColor: '#fff',
-    borderTopWidth: 1,
-    borderTopColor: '#ddd',
-  },
+  flexDirection: 'row',
+  alignItems: 'center',
+  paddingVertical: 6,
+  paddingHorizontal: 8,
+  paddingBottom: 10,
+  backgroundColor: '#fff',
+  borderTopWidth: 1,
+  borderTopColor: '#ddd',
+},
   input: {
-    flex: 1,
-    fontSize: 15,
-    borderRadius: 20,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    maxHeight: 100,
-    backgroundColor: '#f5f5f5',
-    marginHorizontal: 8,
-  },
+  flex: 1,
+  fontSize: 15,
+  borderRadius: 20,
+  paddingHorizontal: 12,
+  paddingVertical: 6,
+  lineHeight: 20,
+  backgroundColor: '#fff',
+  marginHorizontal: 8,
+  borderWidth: 1,
+  borderColor: '#ddd',
+},
   icon: {
     color: '#666',
   },
@@ -170,7 +225,7 @@ const styles = StyleSheet.create({
     alignSelf: 'flex-end',
   },
   other: {
-    backgroundColor: '#eee',
+    backgroundColor: '#fff',
     alignSelf: 'flex-start',
   },
   messageText: {

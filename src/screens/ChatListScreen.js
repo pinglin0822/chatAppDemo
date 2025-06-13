@@ -12,6 +12,7 @@ import {
   StatusBar,
 } from 'react-native';
 import Octicons from 'react-native-vector-icons/Octicons';
+import Ionicons from 'react-native-vector-icons/Ionicons';
 
 
 // Sample data
@@ -20,7 +21,7 @@ const initialChats = [
     id: '1',
     nickname: 'Ping Lin',
     avatar: require('../images/cpl.jpg'),
-    lastMessage: 'Hello there :wave:',
+    lastMessage: 'Thank you',
     lastUpdated: new Date('2024-06-11T15:30:00'),
     unreadCount: 2,
     pinned: true,
@@ -31,6 +32,24 @@ const initialChats = [
     avatar: require('../images/husky.jpg'),
     lastMessage: 'See you soon :smile:',
     lastUpdated: new Date('2024-06-12T09:00:00'),
+    unreadCount: 0,
+    pinned: false,
+  },
+  {
+    id: '3',
+    nickname: 'Group Chat 1',
+    avatar: require('../images/default.png'),
+    lastMessage: 'Hi guys',
+    lastUpdated: new Date('2024-06-12T12:00:00'),
+    unreadCount: 0,
+    pinned: false,
+  },
+  {
+    id: '4',
+    nickname: 'Group Chat 2',
+    avatar: require('../images/default.png'),
+    lastMessage: 'Good morning!',
+    lastUpdated: new Date('2024-06-12T08:00:00'),
     unreadCount: 0,
     pinned: false,
   },
@@ -60,15 +79,42 @@ export default function ChatListScreen({ navigation }) {
     });
 
   const handleLongPress = id => {
-    Alert.alert('Delete Conversation', 'Are you sure you want to delete this conversation?', [
-      { text: 'Cancel' },
-      {
-        text: 'Delete',
-        style: 'destructive',
-        onPress: () => setChats(prev => prev.filter(c => c.id !== id)),
+  const selectedChat = chats.find(chat => chat.id === id);
+  const isPinned = selectedChat?.pinned;
+
+  Alert.alert('Chat Options', 'Choose an action', [
+    {
+      text: isPinned ? 'Unpin' : 'Pin',
+      onPress: () => {
+        setChats(prev =>
+          prev.map(chat =>
+            chat.id === id ? { ...chat, pinned: !chat.pinned } : chat
+          )
+        );
       },
-    ]);
-  };
+    },
+    {
+      text: 'Delete',
+      style: 'destructive',
+      onPress: () => {
+        Alert.alert(
+          'Delete Conversation',
+          'Are you sure you want to delete this conversation?',
+          [
+            { text: 'Cancel', style: 'cancel' },
+            {
+              text: 'Delete',
+              style: 'destructive',
+              onPress: () => setChats(prev => prev.filter(c => c.id !== id)),
+            },
+          ]
+        );
+      },
+    },
+    { text: 'Cancel', style: 'cancel' },
+  ]);
+};
+;
 
   const renderItem = ({ item }) => (
     <TouchableOpacity
