@@ -54,6 +54,9 @@ export default function ChatScreen({ route, navigation }) {
   const [input, setInput] = useState('');
   const flatListRef = useRef(null);
 
+  const userAvatar = require('../images/cpl.jpg');
+
+
   const sendMessage = () => {
     if (input.trim()) {
       const newMsg = {
@@ -88,23 +91,58 @@ export default function ChatScreen({ route, navigation }) {
     setMessages(prev => prev.filter(msg => msg.id !== id));
   };
 
-  const renderMessage = ({ item }) => (
-    <TouchableOpacity
-      onLongPress={() => handleLongPress(item)}
-      style={[styles.messageBubble, item.fromSelf ? styles.self : styles.other]}
-    >
-      <Text style={styles.messageText}>{item.text}</Text>
-      <Text style={styles.timestamp}>{formatTime(item.timestamp)}</Text>
-    </TouchableOpacity>
-  );
+  const renderMessage = ({ item }) => {
+    if (item.fromSelf) {
+      return (
+        <View style={{ alignItems: 'flex-end', marginRight: 10 }}>
+          <TouchableOpacity
+            onLongPress={() => handleLongPress(item)}
+            style={[styles.messageBubble, styles.self]}
+          >
+            <Text style={[styles.messageText, { color: '#fff' }]}>{item.text}</Text>
+          </TouchableOpacity>
+          <Text style={[styles.timestamp, { textAlign: 'right', marginRight: 6 }]}>
+            {formatTime(item.timestamp)}
+          </Text>
+        </View>
+      );
+    } else {
+      return (
+        <View style={styles.otherMessageContainer}>
+          <View style={styles.avatarContainer}>
+            <Image source={userAvatar} style={styles.avatar} />
+            <View style={styles.onlineDot} />
+          </View>
+          <View style={{ alignItems: 'flex-start' }}>
+            <TouchableOpacity
+              onLongPress={() => handleLongPress(item)}
+              style={[styles.messageBubble, styles.other]}
+            >
+              <Text style={styles.messageText}>{item.text}</Text>
+            </TouchableOpacity>
+            <Text style={[styles.timestamp, { marginLeft: 6 }]}>
+              {formatTime(item.timestamp)}
+            </Text>
+          </View>
+        </View>
+      );
+    }
+  };
+
+
+
+
 
   const formatTime = (date) => {
     const d = new Date(date);
-    return `${d.getHours().toString().padStart(2, '0')}:${d.getMinutes()
-      .toString()
-      .padStart(2, '0')}`;
-  };
+    let hours = d.getHours();
+    const minutes = d.getMinutes().toString().padStart(2, '0');
+    const ampm = hours >= 12 ? 'PM' : 'AM';
 
+    hours = hours % 12 || 12; // Convert to 12-hour format, 0 becomes 12
+
+    return `${hours}:${minutes} ${ampm}`;
+  };
   useEffect(() => {
     hideNavigationBar();
   }, []);
@@ -115,42 +153,56 @@ export default function ChatScreen({ route, navigation }) {
     >
       {/* Navigation Bar */}
       <View style={styles.navBar}>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Icon name="arrow-back" size={24} />
+        <TouchableOpacity onPress={() => navigation.goBack()} style={{marginLeft:10}}>
+          <Icon name="arrow-back" size={24} color="#fff" />
         </TouchableOpacity>
-        <Text style={styles.navTitle}>{userName}</Text>
-        <TouchableOpacity>
-          <Icon name="ellipsis-vertical" size={20} />
+        <View style={styles.navTitleContainer}>
+          <Text style={styles.navTitle}>{userName}</Text>
+          <Text style={styles.onlineStatus}>
+            <Text style={{ color: 'lightgreen' }}>●</Text> Online
+          </Text>
+        </View>
+        <TouchableOpacity style={{marginRight:10}}>
+          <Icon name="ellipsis-horizontal" size={20} color="#fff" />
         </TouchableOpacity>
       </View>
 
-      {/* Message List */}
-      <FlatList
-        ref={flatListRef}
-        data={messages}
-        keyExtractor={(item) => item.id}
-        renderItem={renderMessage}
-        inverted
-        keyboardShouldPersistTaps="handled"
-        contentContainerStyle={{ paddingTop: 10, paddingBottom: 90 }}
-      />
-
-      {/* Input Area */}
-      <View style={styles.inputBar}>
-        <TouchableOpacity>
-          <Icon name="happy-outline" size={24} style={styles.icon} />
-        </TouchableOpacity>
-        <TextInput
-          style={styles.input}
-          value={input}
-          onChangeText={setInput}
-          placeholder="Type a message"
-          placeholderTextColor="#888"
-          multiline
+      <View style={styles.chatArea}>
+        {/* Message List */}
+        <FlatList
+          ref={flatListRef}
+          data={messages}
+          keyExtractor={(item) => item.id}
+          renderItem={renderMessage}
+          inverted
+          keyboardShouldPersistTaps="handled"
+          contentContainerStyle={{ paddingTop: 10, paddingBottom: 90 }}
         />
-        <TouchableOpacity onPress={sendMessage}>
-          <Icon name="send" size={24} color="#2e7d32" />
-        </TouchableOpacity>
+
+        {/* Input Area */}
+        <View style={styles.inputBar}>
+          <TouchableOpacity>
+            <Icon name="add" size={28} style={styles.plusIcon} />
+          </TouchableOpacity>
+
+          <View style={styles.inputWrapper}>
+            <TextInput
+              style={styles.input}
+              value={input}
+              onChangeText={setInput}
+              placeholder="Type Message"
+              placeholderTextColor="#888"
+              multiline
+            />
+            <TouchableOpacity style={styles.emojiButton}>
+              <Icon name="happy-outline" size={20} color="#888" />
+            </TouchableOpacity>
+          </View>
+
+          <TouchableOpacity onPress={sendMessage} style={styles.sendButton}>
+            <Icon name="send" size={20} color="#fff" />
+          </TouchableOpacity>
+        </View>
       </View>
     </View>
   );
@@ -159,47 +211,113 @@ export default function ChatScreen({ route, navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: '#6a5bc4',
+  },
+  chatArea: {
+    flex: 1,
     backgroundColor: '#f0f0f0',
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    overflow: 'hidden',
+    marginTop: -10,
   },
   navBar: {
-    height: 100,
-    backgroundColor: '#fff',
+    height: 120,
+    backgroundColor: '#6a5bc4',
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 10,
+    paddingBottom: 20,
     borderBottomWidth: 1,
-    borderBottomColor: '#ddd',
+    borderBottomColor: '#6a5bc4',
     paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0,
+  },
+  navTitleContainer: {
+    alignItems: 'center',
   },
   navTitle: {
     fontSize: 18,
-    fontWeight: 'bold',
+    color: '#fff',
+  },
+  onlineStatus: {
+    fontSize: 12,
+    color: '#fff', // this will apply to "Online"
+    marginTop: 2,
   },
   inputBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 6,
-    paddingHorizontal: 8,
-    paddingBottom: 10,
-    backgroundColor: '#fff',
-    borderTopWidth: 1,
-    borderTopColor: '#ddd',
-  },
+  flexDirection: 'row',
+  alignItems: 'center',
+  paddingHorizontal: 8,
+  paddingVertical: 6,
+  backgroundColor: '#fff',
+  borderTopWidth: 1,
+  borderTopColor: '#ddd',
+},
+plusIcon: {
+  color: '#6a5bc4',
+  marginHorizontal: 6,
+},
+
   input: {
-    flex: 1,
-    fontSize: 15,
-    borderRadius: 20,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    lineHeight: 20,
-    backgroundColor: '#fff',
-    marginHorizontal: 8,
-    borderWidth: 1,
-    borderColor: '#ddd',
-  },
+  flex: 1,
+  fontSize: 15,
+  paddingVertical: 4, 
+  color: '#000',
+},
+  inputWrapper: {
+  flex: 1,
+  flexDirection: 'row',
+  alignItems: 'center',
+  backgroundColor: '#f0f0f0',
+  borderWidth: 1,
+  borderColor: '#ddd',
+  borderRadius: 20,
+  paddingHorizontal: 12,
+  paddingVertical: 8,
+  minHeight: 50,  
+},
+emojiButton: {
+  paddingLeft: 8,
+},
+sendButton: {
+  marginLeft: 8,
+  backgroundColor: '#6a5bc4',
+  padding: 10,
+  borderRadius: 20,
+  justifyContent: 'center',
+  alignItems: 'center',
+},
   icon: {
     color: '#666',
+  },
+  otherMessageContainer: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    marginVertical: 4,
+    marginLeft: 10,
+  },
+
+  avatar: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    marginRight: 6,
+  },
+  avatarContainer: {
+    position: 'relative',
+  },
+
+  onlineDot: {
+    position: 'absolute',
+    bottom: 0,
+    right: 0,
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: 'green',
+    borderWidth: 2,
+    borderColor: '#f0f0f0', // match chat background
   },
   messageBubble: {
     maxWidth: '70%',
@@ -209,7 +327,7 @@ const styles = StyleSheet.create({
     marginHorizontal: 10,
   },
   self: {
-    backgroundColor: '#d1f0d1',
+    backgroundColor: '#6a5bc4',
     alignSelf: 'flex-end',
   },
   other: {

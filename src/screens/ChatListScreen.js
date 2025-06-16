@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -10,10 +10,10 @@ import {
   Image,
   SafeAreaView,
   StatusBar,
+  Platform,
 } from 'react-native';
-import Octicons from 'react-native-vector-icons/Octicons';
 import Ionicons from 'react-native-vector-icons/Ionicons';
-
+import { hideNavigationBar } from 'react-native-navigation-bar-color';
 
 // Sample data
 const initialChats = [
@@ -78,43 +78,49 @@ export default function ChatListScreen({ navigation }) {
       return b.lastUpdated - a.lastUpdated;
     });
 
-  const handleLongPress = id => {
-  const selectedChat = chats.find(chat => chat.id === id);
-  const isPinned = selectedChat?.pinned;
+  const pinnedChats = filteredChats.filter(chat => chat.pinned);
+  const otherChats = filteredChats.filter(chat => !chat.pinned);
 
-  Alert.alert('Chat Options', 'Choose an action', [
-    {
-      text: isPinned ? 'Unpin' : 'Pin',
-      onPress: () => {
-        setChats(prev =>
-          prev.map(chat =>
-            chat.id === id ? { ...chat, pinned: !chat.pinned } : chat
-          )
-        );
+  const handleLongPress = id => {
+    const selectedChat = chats.find(chat => chat.id === id);
+    const isPinned = selectedChat?.pinned;
+
+    Alert.alert('Chat Options', 'Choose an action', [
+      {
+        text: isPinned ? 'Unpin' : 'Pin',
+        onPress: () => {
+          setChats(prev =>
+            prev.map(chat =>
+              chat.id === id ? { ...chat, pinned: !chat.pinned } : chat
+            )
+          );
+        },
       },
-    },
-    {
-      text: 'Delete',
-      style: 'destructive',
-      onPress: () => {
-        Alert.alert(
-          'Delete Conversation',
-          'Are you sure you want to delete this conversation?',
-          [
-            { text: 'Cancel', style: 'cancel' },
-            {
-              text: 'Delete',
-              style: 'destructive',
-              onPress: () => setChats(prev => prev.filter(c => c.id !== id)),
-            },
-          ]
-        );
+      {
+        text: 'Delete',
+        style: 'destructive',
+        onPress: () => {
+          Alert.alert(
+            'Delete Conversation',
+            'Are you sure you want to delete this conversation?',
+            [
+              { text: 'Cancel', style: 'cancel' },
+              {
+                text: 'Delete',
+                style: 'destructive',
+                onPress: () => setChats(prev => prev.filter(c => c.id !== id)),
+              },
+            ]
+          );
+        },
       },
-    },
-    { text: 'Cancel', style: 'cancel' },
-  ]);
-};
-;
+      { text: 'Cancel', style: 'cancel' },
+    ]);
+  };
+
+  useEffect(() => {
+    hideNavigationBar();
+  }, []);
 
   const renderItem = ({ item }) => (
     <TouchableOpacity
@@ -127,7 +133,11 @@ export default function ChatListScreen({ navigation }) {
         <View style={styles.row}>
           <Text style={styles.nickname}>{item.nickname}</Text>
           <Text style={styles.time}>
-            {item.lastUpdated.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+            {item.lastUpdated.toLocaleTimeString([], {
+              hour: '2-digit',
+              minute: '2-digit',
+              hour12: true,
+            }).replace(':', '.').toLowerCase()}
           </Text>
         </View>
         <View style={styles.row}>
@@ -135,14 +145,20 @@ export default function ChatListScreen({ navigation }) {
             {parseEmoji(item.lastMessage)}
           </Text>
           <View style={styles.badges}>
-            {item.unreadCount > 0 && (
+            {item.unreadCount > 0 ? (
               <View style={styles.unreadBadge}>
                 <Text style={styles.unreadText}>
                   {item.unreadCount > 99 ? '99+' : item.unreadCount}
                 </Text>
               </View>
+            ) : (
+              <Ionicons
+                name="checkmark-done"
+                size={18}
+                color="#6a5bc4"
+                style={{ marginLeft: 5 }}
+              />
             )}
-            {item.pinned && <Octicons name="pin" size={14} color="gray" />}
           </View>
         </View>
       </View>
@@ -151,70 +167,120 @@ export default function ChatListScreen({ navigation }) {
 
   return (
     <SafeAreaView style={styles.container}>
-      {/* Top Bar */}
-      <View style={styles.topBar}>
-        <Text style={styles.title}>Messages</Text>
-        <TouchableOpacity onPress={() => Alert.alert('Add', 'Add group/contact')}>
-          <Text style={{ fontSize: 28 }}>＋</Text>
-        </TouchableOpacity>
+      {/* Greeting Section */}
+      <View style={styles.greetingSection}>
+        <Text style={styles.greetingText}>Hi, user!</Text>
+        <Text style={styles.receivedText}>You Received</Text>
+        <Text style={styles.messageCount}>
+          {chats.reduce((sum, chat) => sum + chat.unreadCount, 0)} messages
+        </Text>
       </View>
 
       {/* Search Box */}
-      <TextInput
-        style={styles.searchBox}
-        placeholder="Search..."
-        placeholderTextColor="#888"     // Light grey placeholder
-        value={search}
-        onChangeText={setSearch}
-      />
+      <View style={styles.searchSection}>
+        <TextInput
+          style={styles.searchBox}
+          placeholder="Search..."
+          placeholderTextColor="#888"
+          value={search}
+          onChangeText={setSearch}
+        />
+      </View>
 
       {/* Chat List */}
-      {filteredChats.length === 0 ? (
-        <View style={styles.emptyContainer}>
-          <Ionicons name="chatbubble-ellipses-outline" size={40} color="#aaa" />
-          <Text style={styles.emptyText}>No messages yet</Text>
-        </View>
-      ) : (
-        <FlatList
-          data={filteredChats}
-          keyExtractor={item => item.id}
-          renderItem={renderItem}
-        />
-      )}
+      <View style={{ flex: 1, backgroundColor:"#fff",paddingLeft:10,}}>
+        {filteredChats.length === 0 ? (
+          <View style={styles.emptyContainer}>
+            <Ionicons name="chatbubble-ellipses-outline" size={40} color="#aaa" />
+            <Text style={styles.emptyText}>No messages yet</Text>
+          </View>
+        ) : (
+          <FlatList
+            data={otherChats}
+            keyExtractor={item => item.id}
+            renderItem={renderItem}
+            ListHeaderComponent={
+              <>
+                {pinnedChats.length > 0 && (
+                  <>
+                    <Text style={styles.sectionHeader}>
+                      Pinned Message ({pinnedChats.length})
+                    </Text>
+                    {pinnedChats.map(item => (
+                      <View key={item.id}>{renderItem({ item })}</View>
+                    ))}
+                  </>
+                )}
+                <Text style={styles.sectionHeader}>
+                  All Message ({otherChats.length})
+                </Text>
+              </>
+            }
+          />
+        )}
+      </View>
+
+      {/* Floating Action Button */}
+      <TouchableOpacity
+        style={styles.fab}
+        onPress={() => Alert.alert('Add', 'Add group/contact')}
+      >
+        <Ionicons name="add" size={28} color="#fff" />
+      </TouchableOpacity>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 10, backgroundColor: '#fff' },
-  topBar: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+  container: { flex: 1, backgroundColor: '#6a5bc4' },
+  greetingSection: {
     marginBottom: 10,
+    paddingHorizontal: 20,
     paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0,
   },
-  title: { fontSize: 24, fontWeight: 'bold' },
+  greetingText: {
+    fontWeight: 200,
+    fontSize: 14,
+    color: '#fff',
+    paddingVertical: 10,
+  },
+  receivedText: {
+    fontSize: 16,
+    color: '#fff',
+  },
+  messageCount: {
+    fontSize: 24,
+    color: '#fff',
+    paddingBottom: 20,
+  },
+  searchSection: {
+    backgroundColor: '#fff',
+    padding: 10,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+  },
   searchBox: {
-    backgroundColor: '#fff',          // White background
+    backgroundColor: '#fff',
     borderRadius: 8,
     padding: 10,
-    marginBottom: 10,
     borderWidth: 1,
-    borderColor: '#ddd',              // Light border for definition
-    color: '#000',                    // Black input text
+    borderColor: '#ddd',
+    color: '#000',
   },
-
+  sectionHeader: {
+    fontSize: 16,
+    backgroundColor: '#fff',
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+    paddingTop: 10,
+  },
   card: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingVertical: 12,
     paddingHorizontal: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: '#ddd',  // Light grey border
-    backgroundColor: '#fff',    // Flat white to match the new design
+    backgroundColor: '#fff',
   },
-
   avatar: {
     width: 48,
     height: 48,
@@ -244,4 +310,20 @@ const styles = StyleSheet.create({
   unreadText: { color: 'white', fontSize: 12, fontWeight: 'bold' },
   emptyContainer: { flex: 1, alignItems: 'center', justifyContent: 'center', marginTop: 50 },
   emptyText: { fontSize: 16, color: '#aaa', marginTop: 10 },
+  fab: {
+    position: 'absolute',
+    right: 20,
+    bottom: 30,
+    backgroundColor: '#6a5bc4',
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    justifyContent: 'center',
+    alignItems: 'center',
+    elevation: 5,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+  },
 });
