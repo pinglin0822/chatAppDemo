@@ -320,7 +320,7 @@ sendButton: {
     borderColor: '#f0f0f0', // match chat background
   },
   messageBubble: {
-    maxWidth: '70%',
+    maxWidth: '100%',
     padding: 10,
     borderRadius: 12,
     marginVertical: 4,
